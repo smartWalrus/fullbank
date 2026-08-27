@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS codes (
+    id BIGSERIAL PRIMARY KEY,
+    phone VARCHAR(15) REFERENCES cards(phone),
+    code VARCHAR(40) NOT NULL, 
+    expires_at TIMESTAMP NOT NULL,
+    is_used BOOLEAN NOT NULL DEFAULT false
+)

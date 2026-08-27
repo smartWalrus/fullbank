@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIM Rent — аренда сим-карт</title>
+    <link rel="stylesheet" href="/style.css" />
+    <meta property="og:image" content="https://bolt.new/static/og_default.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
+</head>
+  <body>
+    <!-- Верхняя панель -->
+    <header class="topbar">
+      <div class="logo">SIM<span>RENT</span></div>
+      <div class="user-area">
+        <span class="user-id hidden" id="userId"></span>
+        <button class="btn btn-ghost hidden" id="changePassBtn">Сменить пароль</button>
+        <button class="btn btn-ghost hidden" id="logoutBtn">Выйти</button>
+        <button class="btn btn-ghost" id="authBtn">Войти</button>
+        <button class="btn btn-ghost" id="registerBtn">Регистрация</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- Боковое меню -->
+      <nav class="sidebar">
+        <button class="tab active" data-tab="home">Активные номера</button>
+        <button class="tab" data-tab="history">История</button>
+        <button class="tab tab-admin hidden" data-tab="admin">Админ-панель</button>
+      </nav>
+
+      <!-- Основной контент -->
+      <main class="content">
+        <!-- Вкладка: Активные номера -->
+        <section class="panel active" id="panel-home">
+          <h1 class="panel-title">Активные номера</h1>
+          <p class="panel-sub">Список сим-карт, выданных вам сейчас.</p>
+          <div class="list" id="activeList">
+            <div class="row-empty">Войдите, чтобы увидеть активные номера.</div>
+          </div>
+        </section>
+
+        <!-- Вкладка: История -->
+        <section class="panel" id="panel-history">
+          <h1 class="panel-title">История номеров</h1>
+          <p class="panel-sub">Все сим-карты, которые выдавались вам ранее.</p>
+          <div class="list" id="expiredList">
+            <div class="row-empty">Войдите, чтобы увидеть историю.</div>
+          </div>
+        </section>
+
+        <!-- Вкладка: Админ-панель -->
+        <section class="panel" id="panel-admin">
+          <h1 class="panel-title">Админ-панель</h1>
+          <p class="panel-sub">Добавление сим-карт и выдача аренды пользователям.</p>
+
+          <div class="admin-grid">
+            <div class="admin-card">
+              <h3>Добавить сим-карту</h3>
+              <label class="field">
+                <span>Номер телефона</span>
+                <input type="text" id="adminPhone" placeholder="+7 9XX XXX-XX-XX" />
+              </label>
+              <button class="btn btn-accent" id="adminAddCardBtn">Добавить карту</button>
+              <p class="admin-msg" id="adminCardMsg"></p>
+            </div>
+
+            <div class="admin-card">
+              <h3>Выдать аренду</h3>
+              <label class="field">
+                <span>Логин пользователя</span>
+                <input type="text" id="rentLogin" placeholder="login" />
+              </label>
+              <label class="field">
+                <span>Количество карт</span>
+                <input type="number" id="rentAmount" placeholder="1" min="1" value="1" />
+              </label>
+              <label class="field">
+                <span>Часов аренды</span>
+                <input type="number" id="rentHours" placeholder="24" min="1" value="24" />
+              </label>
+              <button class="btn btn-accent" id="adminRentBtn">Выдать</button>
+              <p class="admin-msg" id="adminRentMsg"></p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Диалог: Вход -->
+    <div class="modal" id="authModal">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2>Вход</h2>
+          <button class="modal-close" data-close="authModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <label class="field">
+            <span>Логин</span>
+            <input type="text" id="loginInput" placeholder="Введите логин" />
+          </label>
+          <label class="field">
+            <span>Пароль</span>
+            <input type="password" id="loginPass" placeholder="Введите пароль" />
+          </label>
+          <p class="modal-error" id="loginError"></p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-close="authModal">Отмена</button>
+          <button class="btn btn-accent" id="authSubmit">Войти</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Диалог: Регистрация -->
+    <div class="modal" id="registerModal">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2>Регистрация</h2>
+          <button class="modal-close" data-close="registerModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <label class="field">
+            <span>Логин</span>
+            <input type="text" id="regLogin" placeholder="Придумайте логин" />
+          </label>
+          <label class="field">
+            <span>Пароль</span>
+            <input type="password" id="regPass" placeholder="Минимум 8 символов" />
+          </label>
+          <label class="field">
+            <span>Роль</span>
+            <select id="regRole">
+              <option value="user">Пользователь</option>
+              <option value="admin">Админ</option>
+            </select>
+          </label>
+          <p class="modal-error" id="regError"></p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-close="registerModal">Отмена</button>
+          <button class="btn btn-accent" id="regSubmit">Зарегистрироваться</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Диалог: Смена пароля -->
+    <div class="modal" id="changePassModal">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2>Смена пароля</h2>
+          <button class="modal-close" data-close="changePassModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <label class="field">
+            <span>Старый пароль</span>
+            <input type="password" id="oldPass" placeholder="Текущий пароль" />
+          </label>
+          <label class="field">
+            <span>Новый пароль</span>
+            <input type="password" id="newPass" placeholder="Минимум 8 символов" />
+          </label>
+          <p class="modal-error" id="changePassError"></p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-close="changePassModal">Отмена</button>
+          <button class="btn btn-accent" id="changePassSubmit">Изменить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Диалог: Отправка SMS -->
+    <div class="modal" id="smsModal">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h2>Отправка SMS</h2>
+          <button class="modal-close" data-close="smsModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-sender">
+            <span class="label">Отправка с номера</span>
+            <span class="modal-sender-phone" id="modalPhone">—</span>
+          </div>
+          <label class="field">
+            <span>Номер получателя</span>
+            <input type="text" id="smsRecipient" placeholder="+7 ___ ___-__-__" />
+          </label>
+          <label class="field field-wide">
+            <span>Текст сообщения</span>
+            <textarea id="smsText" rows="4" placeholder="Введите текст SMS"></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-close="smsModal">Отмена</button>
+          <button class="btn btn-accent" id="modalSend">Отправить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Диалог: История SMS -->
+    <div class="modal" id="historyModal">
+      <div class="modal-card modal-card-wide">
+        <div class="modal-head">
+          <h2>История SMS</h2>
+          <button class="modal-close" data-close="historyModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-sender">
+            <span class="label">Номер</span>
+            <span class="modal-sender-phone" id="historyPhone">—</span>
+          </div>
+          <div class="sms-history" id="smsHistory"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-close="historyModal">Закрыть</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Тосты -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+      // ===== API клиент =====
+      const API = '/api';
+
+      function getToken() { return localStorage.getItem('simrent_token'); }
+      function setToken(t) { localStorage.setItem('simrent_token', t); }
+      function clearToken() { localStorage.removeItem('simrent_token'); localStorage.removeItem('simrent_login'); }
+
+      async function apiCall(path, method, body) {
+        const headers = { 'Content-Type': 'application/json' };
+        const token = getToken();
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const res = await fetch(API + path, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+        });
+        let data;
+        try { data = await res.json(); } catch { data = null; }
+        if (!res.ok) {
+          const msg = (data && data.error) ? data.error : 'Ошибка запроса (' + res.status + ')';
+          throw new Error(msg);
+        }
+        return data;
+      }
+
+      // ===== Тосты =====
+      function toast(message, type) {
+        const container = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = 'toast toast-' + (type || 'info');
+        el.textContent = message;
+        container.appendChild(el);
+        setTimeout(() => el.classList.add('show'), 10);
+        setTimeout(() => {
+          el.classList.remove('show');
+          setTimeout(() => el.remove(), 300);
+        }, 3500);
+      }
+
+      // ===== Переключение вкладок =====
+      const tabs = document.querySelectorAll('.tab');
+      const panels = document.querySelectorAll('.panel');
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          tabs.forEach((t) => t.classList.remove('active'));
+          panels.forEach((p) => p.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+        });
+      });
+
+      // ===== Модальные окна =====
+      function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+      function openModal(id) { document.getElementById(id).classList.add('open'); }
+      document.querySelectorAll('[data-close]').forEach((btn) => {
+        btn.addEventListener('click', () => closeModal(btn.dataset.close));
+      });
+      document.querySelectorAll('.modal').forEach((modal) => {
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+      });
+
+      // ===== Состояние входа =====
+      const authBtn = document.getElementById('authBtn');
+      const registerBtn = document.getElementById('registerBtn');
+      const userId = document.getElementById('userId');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const changePassBtn = document.getElementById('changePassBtn');
+      const adminTabs = document.querySelectorAll('.tab-admin');
+
+      function setLoggedIn(login, role) {
+        userId.textContent = login;
+        userId.classList.remove('hidden');
+        authBtn.classList.add('hidden');
+        registerBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+        changePassBtn.classList.remove('hidden');
+        if (role === 'admin') {
+          adminTabs.forEach(t => t.classList.remove('hidden'));
+        } else {
+          adminTabs.forEach(t => t.classList.add('hidden'));
+        }
+        loadCards();
+      }
+
+      function setLoggedOut() {
+        userId.classList.add('hidden');
+        authBtn.classList.remove('hidden');
+        registerBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+        changePassBtn.classList.add('hidden');
+        adminTabs.forEach(t => t.classList.add('hidden'));
+        document.getElementById('activeList').innerHTML = '<div class="row-empty">Войдите, чтобы увидеть активные номера.</div>';
+        document.getElementById('expiredList').innerHTML = '<div class="row-empty">Войдите, чтобы увидеть историю.</div>';
+        // Переключиться на главную вкладку
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tabs[0].classList.add('active');
+        panels[0].classList.add('active');
+      }
+
+      // ===== Вход =====
+      authBtn.addEventListener('click', () => openModal('authModal'));
+      document.getElementById('authSubmit').addEventListener('click', async () => {
+        const login = document.getElementById('loginInput').value.trim();
+        const password = document.getElementById('loginPass').value;
+        const errEl = document.getElementById('loginError');
+        errEl.textContent = '';
+        if (!login || !password) { errEl.textContent = 'Заполните все поля'; return; }
+        try {
+          const data = await apiCall('/login', 'POST', { login, password });
+          setToken(data.token);
+          localStorage.setItem('simrent_login', login);
+          // Декодируем роль из JWT
+          const payload = JSON.parse(atob(data.token.split('.')[1]));
+          closeModal('authModal');
+          document.getElementById('loginInput').value = '';
+          document.getElementById('loginPass').value = '';
+          setLoggedIn(login, payload.role);
+          toast('Вход выполнен', 'success');
+        } catch (e) {
+          errEl.textContent = e.message;
+        }
+      });
+
+      // ===== Регистрация =====
+      registerBtn.addEventListener('click', () => openModal('registerModal'));
+      document.getElementById('regSubmit').addEventListener('click', async () => {
+        const login = document.getElementById('regLogin').value.trim();
+        const password = document.getElementById('regPass').value;
+        const role = document.getElementById('regRole').value;
+        const errEl = document.getElementById('regError');
+        errEl.textContent = '';
+        if (!login || !password) { errEl.textContent = 'Заполните все поля'; return; }
+        if (password.length < 8) { errEl.textContent = 'Пароль минимум 8 символов'; return; }
+        try {
+          await apiCall('/register', 'POST', { login, password, role });
+          closeModal('registerModal');
+          document.getElementById('regLogin').value = '';
+          document.getElementById('regPass').value = '';
+          toast('Аккаунт создан. Теперь войдите.', 'success');
+          openModal('authModal');
+        } catch (e) {
+          errEl.textContent = e.message;
+        }
+      });
+
+      // ===== Смена пароля =====
+      changePassBtn.addEventListener('click', () => openModal('changePassModal'));
+      document.getElementById('changePassSubmit').addEventListener('click', async () => {
+        const oldPass = document.getElementById('oldPass').value;
+        const newPass = document.getElementById('newPass').value;
+        const errEl = document.getElementById('changePassError');
+        errEl.textContent = '';
+        if (!oldPass || !newPass) { errEl.textContent = 'Заполните все поля'; return; }
+        if (newPass.length < 8) { errEl.textContent = 'Новый пароль минимум 8 символов'; return; }
+        try {
+          await apiCall('/change-password', 'POST', { oldPass, newPass });
+          closeModal('changePassModal');
+          document.getElementById('oldPass').value = '';
+          document.getElementById('newPass').value = '';
+          toast('Пароль изменён', 'success');
+        } catch (e) {
+          errEl.textContent = e.message;
+        }
+      });
+
+      // ===== Выход =====
+      logoutBtn.addEventListener('click', () => {
+        clearToken();
+        setLoggedOut();
+        toast('Вы вышли из аккаунта', 'info');
+      });
+
+      // ===== Загрузка карт =====
+      function formatDate(d) {
+        const date = new Date(d);
+        return date.toLocaleDateString('ru-RU') + ', ' + date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      async function loadCards() {
+        // Активные
+        const activeList = document.getElementById('activeList');
+        activeList.innerHTML = '<div class="row-empty">Загрузка…</div>';
+        try {
+          const cards = await apiCall('/cards/active', 'GET');
+          renderActiveCards(cards);
+        } catch (e) {
+          activeList.innerHTML = '<div class="row-empty">' + e.message + '</div>';
+        }
+
+        // История
+        const expiredList = document.getElementById('expiredList');
+        expiredList.innerHTML = '<div class="row-empty">Загрузка…</div>';
+        try {
+          const cards = await apiCall('/cards/expired', 'GET');
+          renderExpiredCards(cards);
+        } catch (e) {
+          expiredList.innerHTML = '<div class="row-empty">' + e.message + '</div>';
+        }
+      }
+
+      function renderActiveCards(cards) {
+        const list = document.getElementById('activeList');
+        if (!cards || cards.length === 0) {
+          list.innerHTML = '<div class="row-empty">Нет активных номеров.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        cards.forEach((card) => {
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML =
+            '<div class="row-phone">' + (card.phone || '—') + '</div>' +
+            '<div class="row-field"><span class="label">Действует до</span><span class="value">' + formatDate(card.expires_at) + '</span></div>' +
+            '<div class="row-field row-sms"><span class="label">Последний код</span><span class="value code">—</span></div>' +
+            '<button class="btn btn-accent send-sms">Отправить SMS</button>';
+          list.appendChild(row);
+        });
+        bindSmsButtons();
+      }
+
+      function renderExpiredCards(cards) {
+        const list = document.getElementById('expiredList');
+        if (!cards || cards.length === 0) {
+          list.innerHTML = '<div class="row-empty">История пуста.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        cards.forEach((card) => {
+          const row = document.createElement('div');
+          row.className = 'row row-clickable';
+          row.dataset.phone = card.phone || '—';
+          row.innerHTML =
+            '<div class="row-phone">' + (card.phone || '—') + '</div>' +
+            '<div class="row-field"><span class="label">Действовал до</span><span class="value">' + formatDate(card.expires_at) + '</span></div>' +
+            '<div class="row-field row-sms"><span class="label">Последний код</span><span class="value code">—</span></div>' +
+            '<span class="badge badge-muted">Архив</span>';
+          list.appendChild(row);
+        });
+        bindHistoryRows();
+      }
+
+      // ===== Отправка SMS (заглушка, т.к. ручки нет на бэке) =====
+      const smsModal = document.getElementById('smsModal');
+      const modalPhone = document.getElementById('modalPhone');
+      function bindSmsButtons() {
+        document.querySelectorAll('.send-sms').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const row = btn.closest('.row');
+            modalPhone.textContent = row.querySelector('.row-phone').textContent;
+            openModal('smsModal');
+          });
+        });
+      }
+      document.getElementById('modalSend').addEventListener('click', () => {
+        closeModal('smsModal');
+        document.getElementById('smsRecipient').value = '';
+        document.getElementById('smsText').value = '';
+        toast('SMS отправлено (демо-режим)', 'info');
+      });
+
+      // ===== История SMS (заглушка) =====
+      const historyModal = document.getElementById('historyModal');
+      const historyPhone = document.getElementById('historyPhone');
+      const smsHistory = document.getElementById('smsHistory');
+      function bindHistoryRows() {
+        document.querySelectorAll('.row-clickable').forEach((row) => {
+          row.addEventListener('click', () => {
+            historyPhone.textContent = row.dataset.phone;
+            smsHistory.innerHTML = '<div class="row-empty">История SMS недоступна (нет ручки на бэке).</div>';
+            openModal('historyModal');
+          });
+        });
+      }
+
+      // ===== Админ-панель =====
+      document.getElementById('adminAddCardBtn').addEventListener('click', async () => {
+        const phone = document.getElementById('adminPhone').value.trim();
+        const msgEl = document.getElementById('adminCardMsg');
+        msgEl.textContent = '';
+        msgEl.className = 'admin-msg';
+        if (!phone) { msgEl.textContent = 'Введите номер'; msgEl.classList.add('error'); return; }
+        try {
+          const data = await apiCall('/admin/cards', 'POST', { phone });
+          msgEl.textContent = data.message || 'Карта добавлена';
+          msgEl.classList.add('success');
+          document.getElementById('adminPhone').value = '';
+        } catch (e) {
+          msgEl.textContent = e.message;
+          msgEl.classList.add('error');
+        }
+      });
+
+      document.getElementById('adminRentBtn').addEventListener('click', async () => {
+        const login = document.getElementById('rentLogin').value.trim();
+        const amount = parseInt(document.getElementById('rentAmount').value, 10);
+        const hours = parseInt(document.getElementById('rentHours').value, 10);
+        const msgEl = document.getElementById('adminRentMsg');
+        msgEl.textContent = '';
+        msgEl.className = 'admin-msg';
+        if (!login || !amount || !hours) { msgEl.textContent = 'Заполните все поля'; msgEl.classList.add('error'); return; }
+        try {
+          const data = await apiCall('/admin/cards/rent', 'POST', { login, amount, hours });
+          msgEl.textContent = data.message || 'Аренда выдана';
+          msgEl.classList.add('success');
+        } catch (e) {
+          msgEl.textContent = e.message;
+          msgEl.classList.add('error');
+        }
+      });
+
+      // ===== Восстановление входа при загрузке =====
+      (function init() {
+        const token = getToken();
+        const login = localStorage.getItem('simrent_login');
+        if (token && login) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            // Проверяем, не истёк ли токен
+            const exp = payload.exp ? payload.exp * 1000 : 0;
+            if (exp && Date.now() > exp) {
+              clearToken();
+              setLoggedOut();
+            } else {
+              setLoggedIn(login, payload.role);
+            }
+          } catch {
+            clearToken();
+            setLoggedOut();
+          }
+        } else {
+          setLoggedOut();
+        }
+      })();
+    </script>
+  </body>
+</html>
