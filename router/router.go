@@ -25,6 +25,8 @@ func NewRouter(config Config) *gin.Engine {
 	authServ := service.NewAuthService(repo, jwtServ)
 	handlers := http.CreateHandlers(serv, authServ)
 	router := gin.Default()
+	router.StaticFile("/login.html", "./dist/login.html")
+	router.StaticFile("/style.css", "./dist/style.css")
 	router.Static("/assets", "./dist/assets")
 	router.StaticFile("/", "./dist/index.html")
 	router.NoRoute(func(c *gin.Context) {

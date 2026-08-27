@@ -66,16 +66,13 @@ func (h *Handlers) RentCard(c *gin.Context) {
 		return
 	}
 	amount, err := h.service.RentCard(c.Request.Context(), req.Login, req.CardAmount, req.Hours)
-
 	if err != nil {
-		if amount == 0 {
-			c.JSON(404, gin.H{"error": "no free cards available"})
-			return
-		}
+
 		if errors.Is(err, domain.ErrUserNotFound) {
 			c.JSON(404, gin.H{"error": "user not found. try another login"})
 			return
 		}
+
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -182,4 +179,19 @@ func (h *Handlers) UpdatePass(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{"message": "update succeded"})
+}
+func (h *Handlers) WriteNote(c *gin.Context) {
+	var req struct {
+		CardId  int    `json:"card_id"`
+		Message string `json:"message"`
+	}
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": "failed to parse data"})
+		return
+	}
+	if err := h.service.WriteNote(c.Request.Context(), req.CardId, req.Message); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "comment added"})
 }

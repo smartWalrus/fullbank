@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS cards (
     phone VARCHAR(15) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
-    is_busy BOOLEAN DEFAULT FALSE
+    is_busy BOOLEAN DEFAULT FALSE,
+    comment VARCHAR(25) 
 )

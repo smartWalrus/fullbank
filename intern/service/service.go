@@ -187,3 +187,9 @@ func validatePhone(phone string) error {
 	time.Sleep(1 * time.Second)
 	return nil
 }
+func (s *Service) WriteNote(ctx context.Context, id int, message string) error {
+	if err := s.repo.WriteNote(ctx, id, message); err != nil {
+		return err
+	}
+	return nil
+}

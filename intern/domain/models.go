@@ -22,6 +22,7 @@ type SimCard struct {
 	Phone     string
 	CreatedAt time.Time
 	IsActive  bool
+	Message   string
 }
 type Rental struct {
 	Id        int64     `json:"id"`

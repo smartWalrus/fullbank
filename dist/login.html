@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вход</title>
+    <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+    <div class="login-page">
+        <div class="login-box">
+            <h1>SIM RENT</h1>
+            <p>Войдите, чтобы продолжить</p>
+            <label class="field">
+                <span>Логин</span>
+                <input type="text" id="loginInput" placeholder="Введите логин" />
+            </label>
+            <label class="field">
+                <span>Пароль</span>
+                <input type="password" id="loginPass" placeholder="Введите пароль" />
+            </label>
+            <p class="modal-error" id="loginError"></p>
+            <button class="btn btn-accent" id="authSubmit">Войти</button>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+
+        function getToken() { return localStorage.getItem('simrent_token'); }
+        function setToken(t) { localStorage.setItem('simrent_token', t); }
+        function clearToken() { localStorage.removeItem('simrent_token'); localStorage.removeItem('simrent_login'); }
+
+        async function apiCall(path, method, body) {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = getToken();
+            if (token) headers[ 'Authorization' ] = 'Bearer ' + token;
+            const res = await fetch(API + path, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : undefined,
+            });
+            let data;
+            try { data = await res.json(); } catch { data = null; }
+            if (!res.ok) {
+                const msg = (data && data.error) ? data.error : 'Ошибка запроса (' + res.status + ')';
+                throw new Error(msg);
+            }
+            return data;
+        }
+
+        document.getElementById('authSubmit').addEventListener('click', async () => {
+            const login = document.getElementById('loginInput').value.trim();
+            const password = document.getElementById('loginPass').value;
+            const errEl = document.getElementById('loginError');
+            errEl.textContent = '';
+
+            if (!login || !password) {
+                errEl.textContent = 'Заполните все поля';
+                return;
+            }
+
+            try {
+                const data = await apiCall('/login', 'POST', { login, password });
+                console.log('🔵 Token from server:', data.token);
+                setToken(data.token);
+                setToken(data.token);
+                localStorage.setItem('simrent_login', login);
+                window.location.href = '/'; // ✅ Перенаправляем на главную
+            } catch (e) {
+                errEl.textContent = e.message;
+            }
+        });
+
+        // Если уже залогинен — сразу на главную
+        if (getToken()) {
+            window.location.href = '/';
+        }
+    </script>
+</body>
+
+</html>

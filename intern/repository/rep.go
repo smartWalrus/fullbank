@@ -228,3 +228,15 @@ func MeasureQuery(queryType string, fn func() error) error {
 	}
 	return err
 }
+func (r *Repository) WriteNote(ctx context.Context, id int, message string) error {
+	query := `
+	UPDATE cards
+	SET comment = $1
+	WHERE id = $2
+	`
+	_, err := r.db.Exec(ctx, query, message, id)
+	if err != nil {
+		return fmt.Errorf("failed to set comment, %w", err)
+	}
+	return nil
+}
